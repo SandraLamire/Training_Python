@@ -1,0 +1,60 @@
+import meraki
+import os
+import requests
+import time
+
+MERAKI_API_KEY = os.environ.get('API_KEY_SL')
+dashboard = meraki.DashboardAPI(MERAKI_API_KEY, suppress_logging=True)
+
+NETWORK_ID = 'L_714946440845070894'
+CLIENT_MAC = '38:94:ed:bd:2e:31'
+
+def get_scanning_clients(api_key, network_id):
+    url = f'https://api.meraki.com/api/v1/networks/{network_id}/clients?timespan=60'
+    headers = {'X-Cisco-Meraki-API-Key': api_key}
+    response = requests.get(url, headers=headers)
+    return response.json()
+
+# Liste des clients détectés actuellement
+current_clients = get_scanning_clients(MERAKI_API_KEY, NETWORK_ID)
+
+# Simulation de votre liste existante
+existing_clients = [{'mac': '38:94:ed:bd:2e:31', 'lastSeen': 1633344600}]
+
+# Comparaison pour détection de déconnexions/reconnexions
+for existing_client in existing_clients:
+    client_mac = existing_client['mac']
+    
+    # Vérifier si le client est actuellement détecté
+    detected = any(client['mac'] == client_mac for client in current_clients)
+    
+    if detected:
+        # Mettre à jour le timestamp de "last seen" pour le client existant
+        existing_client['lastSeen'] = int(time.time())
+        print(f"Client {client_mac} reconnecté.")
+    else:
+        # Ajouter le client à la liste actuelle si non détecté
+        current_clients.append(existing_client)
+        print(f"Client {client_mac} déconnecté.")
+        
+       
+# À ce stade, current_clients contient la liste mise à jour des clients
+print (existing_client)
+
+import datetime
+
+# Exemple de conversion du timestamp en date et heure lisible
+timestamp = 1696515973
+date_time = datetime.datetime.utcfromtimestamp(timestamp)
+print(f"Le client a été vu pour la dernière fois le {date_time}")
+
+
+print ('****************************************')
+
+NETWORK_ID = 'L_714946440845070894'
+
+# Récupérer la liste des clients connectés au réseau
+clients = dashboard.networks.getNetworkClients(NETWORK_ID)
+
+for client in clients:
+    print(f"Client {client['mac']} connecté.")
